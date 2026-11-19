@@ -78,8 +78,10 @@ Entry point: `/deliver`, which selects the `orchestrator` on the mid tier.
    operation, a production or external side effect, a requirements conflict where
    every path is a guess, a plan defect that invalidates scope, or a loop cap with
    a load-bearing finding.
-5. Never push, merge a protected branch, deploy, publish, or mutate production
-   data, even after approval. Present the integration options at the second gate.
+5. Do not push, merge, deploy, publish or mutate production data on your own
+   initiative. When the Product Owner explicitly chooses an integration option
+   at the second gate, execute it. Confirm once before force-push, deploy,
+   publish, or production data changes.
 6. Bounded loops: five fix rounds per task, exactly one final fix wave.
    Unresolved findings are reported, never silently parked.
 

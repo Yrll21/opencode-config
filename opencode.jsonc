@@ -21,12 +21,12 @@
   "worktree": {
     "directory": "../.worktrees"
   },
-  // Safety floor for every agent, including build. The Product Owner can still
-  // run these by hand; the agents cannot. Deliberately narrow: no blanket
-  // shell deny, which would break routine work.
+  // Safety floor for every agent. Pushes and PR merges are allowed at the
+  // Product Owner's explicit request; force-push, release, publish and deploy
+  // stay denied. Deliberately narrow: no blanket shell deny.
   "permissions": [
-    { "action": "shell", "resource": "git push *", "effect": "deny" },
-    { "action": "shell", "resource": "gh pr merge *", "effect": "deny" },
+    { "action": "shell", "resource": "git push --force*", "effect": "deny" },
+    { "action": "shell", "resource": "git push -f*", "effect": "deny" },
     { "action": "shell", "resource": "gh release create *", "effect": "deny" },
     { "action": "shell", "resource": "npm publish *", "effect": "deny" },
     { "action": "shell", "resource": "docker push *", "effect": "deny" },

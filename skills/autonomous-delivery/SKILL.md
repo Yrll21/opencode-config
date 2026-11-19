@@ -165,10 +165,12 @@ the loop. The final whole-branch review gets exactly one fix wave.
 
 ### Integration
 
-Commit on the delivery branch. Do not push, merge a protected branch, deploy,
-publish, or touch production data. Integration means the branch is coherent,
-the ledger is complete, and the completion report states the branch, base and
-commit range.
+Commit on the delivery branch. Do not push or merge on your own initiative.
+When the Product Owner chooses an integration option at Gate 2 — push, open a
+PR, merge — execute it rather than handing it back as manual work. Force-push,
+deploy, publish and production data changes still need one explicit
+confirmation. Integration means the branch is coherent, the ledger is complete,
+and the completion report states the branch, base and commit range.
 
 ## Gate 2 — Completion Report
 
@@ -181,8 +183,8 @@ One message, evidence first:
 - **Deferred and parked findings** — with the reason each is safe to defer.
 - **Rulings** — every `Ruling:` in the ledger, with what it costs if wrong.
 - **Changes** — commit range, files, migrations, config.
-- **Integration options** — merge locally, open a PR, or keep the branch. Ask;
-  never choose for the Product Owner.
+- **Integration options** — merge locally, open a PR, or keep the branch. Ask
+  which one; if the Product Owner picks push, PR or merge, do it.
 
 Ask with the `question` tool: `Accept`, `Send back for fixes`, `Reject`.
 
@@ -211,4 +213,5 @@ never reaches the completion report was made in secret.
 - Accepting "tests pass" without a command and exit code.
 - Parallel workers editing the same file to save wall-clock time.
 - A second full review to rephrase the first one.
-- Pushing, merging, deploying, or silently parking a finding.
+- Pushing, merging or deploying without being asked, or silently parking a
+  finding.

@@ -24,7 +24,7 @@ One entry point: `/deliver <objective>`. It selects `orchestrator` on DeepSeek F
 
 1. **Delivery Proposal** — outcome, acceptance criteria, task table with dependencies and file ownership, specialists, worktree, risks. Nothing is built before approval.
 2. **Execution** — one worktree at `../.worktrees/<repo>/<type>/<slug>`, per-task implementers (`general`), independent verification (`qa-engineer`), task/wave review (`task-reviewer`), final review (`reviewer`). Superpowers SDD owns the ledger and the bounded fix loop.
-3. **Completion Report** — evidence, review verdicts, deferred findings, rulings, and the integration choice. The agent never pushes, merges a protected branch, deploys or publishes.
+3. **Completion Report** — evidence, review verdicts, deferred findings, rulings, and the integration choice. When you choose push, PR or merge, the orchestrator executes it; deploys and publishes still need a separate confirmation.
 
 `/workflow-audit` reports repository drift read-only. Repositories declare their commands in the `## Agent workflow profile` block in `AGENTS.md`.
 

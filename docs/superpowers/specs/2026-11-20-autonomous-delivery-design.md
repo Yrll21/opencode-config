@@ -73,7 +73,8 @@ Superpowers behaviour and adds plugin API maintenance. Rejected.
 8. Reviews are bounded by SDD: 5 fix rounds per task, one final fix wave.
 9. Rulings are recorded in the SDD ledger and surfaced in the completion report.
 10. Superpowers is pinned to 7.0.1.
-11. Global denies: push, force-push, PR merge, release, publish, deploy.
+11. Global denies: force-push, release, publish, deploy. Push and PR merge are
+    allowed when the Product Owner explicitly asks for them.
 
 ## Verification tiers
 
