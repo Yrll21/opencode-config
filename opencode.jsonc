@@ -1,9 +1,97 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["CODEX_DELEGATION.md"],
-  "subagent_depth": 1,
+  // Pinned: an upstream change must not silently alter the delivery workflow.
+  "plugins": ["superpowers@git+https://github.com/obra/superpowers.git#v7.0.1"],
+  "default_agent": "build",
+  "model": "opencode-go/deepseek-v4.1-flash",
+  "compaction": {
+    "auto": true,
+    "keep": {
+      "tokens": 12000
+    },
+    "buffer": "25%"
+  },
+  "experimental": {
+    "subagent_depth": 1
+  },
   "lsp": true,
   "formatter": true,
+  // Keep native worktree creation inside the existing human-owned layout:
+  // ~/dev/.worktrees/<repo>/<type>/<slug>.
+  "worktree": {
+    "directory": "../.worktrees"
+  },
+  // Safety floor for every agent, including build. The Product Owner can still
+  // run these by hand; the agents cannot. Deliberately narrow: no blanket
+  // shell deny, which would break routine work.
+  "permissions": [
+    { "action": "shell", "resource": "git push *", "effect": "deny" },
+    { "action": "shell", "resource": "gh pr merge *", "effect": "deny" },
+    { "action": "shell", "resource": "gh release create *", "effect": "deny" },
+    { "action": "shell", "resource": "npm publish *", "effect": "deny" },
+    { "action": "shell", "resource": "docker push *", "effect": "deny" },
+    { "action": "shell", "resource": "firebase deploy *", "effect": "deny" },
+    { "action": "shell", "resource": "vercel *--prod*", "effect": "deny" },
+    { "action": "shell", "resource": "terraform apply *", "effect": "deny" },
+    { "action": "shell", "resource": "kubectl apply *", "effect": "deny" }
+  ],
+  "agents": {
+    // Mid tier: default interactive coding and planning. Pick a top-tier
+    // model by hand for work that needs it.
+    "build": {
+      "model": "opencode-go/deepseek-v4.1-flash"
+    },
+    "plan": {
+      "model": "opencode-go/deepseek-v4.1-flash"
+    },
+    // Cheap tier: discovery, search, reading. Highest call volume, lowest judgment.
+    "explore": {
+      "model": "opencode-go/gpt-6-luna#low"
+    },
+    // Mid tier: default worker and implementer. Do not drop this to the cheapest
+    // tier — "turn count beats token price".
+    "general": {
+      "model": "opencode-go/deepseek-v4.1-flash"
+    },
+    // ChatGPT subscription: routine task review. High-risk work uses reviewer.
+    "task-reviewer": {
+      "description": "Reviews one task's diff against its spec and quality bar. Read-only.",
+      "mode": "subagent",
+      "model": "openai/gpt-6-luna#medium",
+      "system": "Read-only routine task review. Review the supplied task, diff range, and acceptance criteria; read only the dependencies needed to establish correctness. Report actionable findings only, in severity order, each with path:line, concrete failure, and a short fix direction. No successful-check narration, plan retelling, praise, or speculative style suggestions. If clean, say: No actionable findings. State any material verification limitation briefly. For a re-review, check prior findings, fixes, and affected dependencies; do not repeat the whole review unless the scope changed. Authorization, security, concurrency, transactions, idempotency, recovery, migrations, and final whole-branch reviews require the reviewer agent; flag that need rather than claiming approval for those surfaces.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git show*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git rev-parse*", "effect": "allow" }
+      ]
+    },
+    // ChatGPT subscription: security/concurrency and final whole-branch review.
+    "reviewer": {
+      "description": "Read-only security, concurrency, transaction/recovery and final whole-branch review.",
+      "mode": "subagent",
+      "model": "openai/gpt-6.1-sol#high",
+      "system": "Read-only high-risk or final whole-branch review. Thoroughly inspect correctness, authorization/data boundaries, concurrency, transaction invariants, retry/idempotency/recovery, regressions, and test gaps as relevant to the supplied scope. Report actionable findings only, in severity order, each with path:line, concrete failure, and a short fix direction. Do not suppress real findings to save tokens. Omit praise, plan retelling, successful-check narration, and speculative style suggestions. If clean, say: No actionable findings. Briefly state material verification limitations and blocking items. Never imply tests, browser acceptance, or deployment were verified unless you actually verified them. For re-reviews, inspect previous findings, their fixes, and affected dependencies; expand only when those changes create a concrete reason. A final whole-branch review still covers the complete requested range.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git show*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git rev-parse*", "effect": "allow" }
+      ]
+    },
+    // Design judgment and stuck fix-loops (rounds 4-5).
+    "architect": {
+      "description": "Architecture, design and escalation for stuck fix rounds.",
+      "mode": "subagent",
+      "model": "opencode-go/kimi-k3.1-pro#high"
+    }
+  },
   "mcp": {
     "context7": {
       "type": "remote",

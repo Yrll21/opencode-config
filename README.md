@@ -1,47 +1,68 @@
 # OpenCode Config
 
-Reusable global OpenCode configuration for a Codex-led software engineering workflow with narrowly scoped subagents.
+Global OpenCode V2 configuration using both OpenCode Go and a ChatGPT subscription.
 
-## Included
+## Model routing
 
-- Global LSP and formatter support
-- Context7 documentation MCP integration
-- One-level subagent delegation
-- Read-only repository exploration and code review agents
-- Narrow test and documentation assistants
-- Read-only GitHub research agent
-- A delegation policy that keeps architecture, security, production code, deployment, and final verification with the primary Codex agent
+| Role | Agent | Model |
+| --- | --- | --- |
+| Interactive coding/planning | `build`, `plan` | `opencode-go/deepseek-v4.1-flash` |
+| Delivery orchestration, independent QA | `orchestrator`, `qa-engineer` | `opencode-go/deepseek-v4.1-flash` |
+| Exploration | `explore` | `opencode-go/gpt-6-luna#low` |
+| Implementation | `general` | `opencode-go/deepseek-v4.1-flash` |
+| Routine task review | `task-reviewer` | `openai/gpt-6-luna#medium` |
+| Security/concurrency/recovery and final review | `reviewer` | `openai/gpt-6.1-sol#high` |
+| Architecture/escalation | `architect` | `opencode-go/kimi-k3.1-pro#high` |
 
-## Requirements
+The root default is DeepSeek Flash. Pick Sol high or Kimi high by hand when a task needs escalation. Existing sessions retain their selected model. Use `/models` to select a model in an existing session if needed.
 
-- OpenCode 1.18.32 or a compatible newer release
-- An OpenAI provider connection with access to `openai/gpt-5.6-luna` and `openai/gpt-5.6-sol-fast`
-- GitHub CLI authentication for `github-research` shell commands
+Reviews are read-only and report actionable findings, not successful-check essays. Re-reviews focus on fixes and affected dependencies; final branch review covers the full range. `/review-branch` explicitly selects Sol high.
 
-If those model IDs are unavailable, replace the `model` values in `agents/*.md` with models supported by your account.
+## Delivery workflow
 
-## Install On A New Device
+One entry point: `/deliver <objective>`. It selects `orchestrator` on DeepSeek Flash and loads the global `autonomous-delivery` skill.
 
-Back up any existing global configuration, then clone this repository:
+1. **Delivery Proposal** — outcome, acceptance criteria, task table with dependencies and file ownership, specialists, worktree, risks. Nothing is built before approval.
+2. **Execution** — one worktree at `../.worktrees/<repo>/<type>/<slug>`, per-task implementers (`general`), independent verification (`qa-engineer`), task/wave review (`task-reviewer`), final review (`reviewer`). Superpowers SDD owns the ledger and the bounded fix loop.
+3. **Completion Report** — evidence, review verdicts, deferred findings, rulings, and the integration choice. The agent never pushes, merges a protected branch, deploys or publishes.
 
-```bash
-mv ~/.config/opencode ~/.config/opencode.backup
-git clone git@github.com:Yrll21/opencode-config.git ~/.config/opencode
+`/workflow-audit` reports repository drift read-only. Repositories declare their commands in the `## Agent workflow profile` block in `AGENTS.md`.
+
+## Connections
+
+Use `/connect` to connect **OpenCode Go** with its subscription API key. Connect **OpenAI** using **Sign in with ChatGPT** to use your ChatGPT plan, not OpenAI API billing. Usage allowances are separate; routing does not pool them or guarantee speed. No automatic paid API fallback is configured here.
+
+Use `/models` to confirm availability. Configuration, agents and commands reload automatically; `/reload` forces a reload. No service restart is needed for these edits.
+
+## Global versus project rules
+
+`AGENTS.md` reserves model routing to this global configuration while repositories retain product, security, testing and architecture rules. Dispatch pinned agents without explicit model overrides.
+
+This is an operating policy, not a technical lock: OpenCode project configuration and commands can override user-global defaults. Hard enforcement requires system-managed configuration. Do not silently rewrite project overrides; report conflicts first.
+
+### System routing enforcement (macOS)
+
+`managed-routing.jsonc` contains the approved system-level model defaults, compaction settings and reviewer permissions. The destination now exists on this machine, so back it up before reinstalling:
+
+```sh
+sudo cp -p "/Library/Application Support/opencode/opencode.jsonc" "/Library/Application Support/opencode/opencode.jsonc.bak-pre-superpowers-off"
+sudo install -d -m 755 "/Library/Application Support/opencode"
+sudo install -m 644 ~/.config/opencode/managed-routing.jsonc "/Library/Application Support/opencode/opencode.jsonc"
+opencode reload
+opencode debug agents
 ```
 
-Start OpenCode once so it can recreate local package metadata if needed, then verify agent discovery:
+System configuration outranks project configuration for these settings. Reinstall after changing the routing table. This does not lock a session's explicit model selection or command/tool model overrides, prevent new agents, or make natural-language instructions immutable. It does not enforce OAuth versus API-key authentication; keep OpenAI connected through ChatGPT sign-in. Review any existing destination file before replacing it on another device.
 
-```bash
-opencode agent list
-opencode debug config
-```
+## Other settings
 
-OpenCode loads configuration at startup. Restart it after changing `opencode.jsonc`, agent definitions, or instruction files.
+- Superpowers plugin (`superpowers@git+https://github.com/obra/superpowers.git#v7.0.1`, V2 `plugins` key) providing its skills, pinned so upstream cannot silently change the workflow. `AGENTS.md` maps the abstract roles those skills name to the pinned agents above, so dispatch never relies on model inheritance.
+- One-level subagent delegation; compaction starts with a 25% buffer and keeps 12,000 recent tokens.
+- LSP and formatters enabled.
+- Context7 documentation MCP integration.
+- Native worktrees resolve to `../.worktrees`, matching the existing human-owned layout. The orchestrator may create one only inside an approved delivery.
+- Global deny rules for push, PR merge, release, publish and deploy commands. The Product Owner can still run them by hand.
 
-## Project Rules
+## Local files
 
-Keep product- and repository-specific guidance in each project's `AGENTS.md`. This repository intentionally contains only reusable global defaults.
-
-## Local Files
-
-Generated package metadata, dependencies, machine backups, and secrets are ignored. Never commit API keys, provider credentials, or machine-specific tokens.
+Never commit API keys, provider credentials, machine-specific tokens or generated dependencies. Preserve unrelated local changes when updating this configuration.
